@@ -3,39 +3,75 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Input } from '../components/Input';
 import '@testing-library/jest-dom';
 
-// Мокаем зависимости
 jest.mock('react-native', () => {
-  const View = ({ children, style }: any) => <div style={style}>{children}</div>;
-  const Text = ({ children, style }: any) => <span style={style}>{children}</span>;
-  const TextInput = ({ 
-    value, 
-    onChangeText, 
-    placeholder, 
-    style, 
+  const React = require('react');
+  
+  const View = ({ children, style, ...props }: any) => (
+    <div style={style} {...props}>
+      {children}
+    </div>
+  );
+  
+  const Text = ({ children, style, ...props }: any) => (
+    <span style={style} {...props}>
+      {children}
+    </span>
+  );
+  
+  const TextInput = ({
+    value,
+    onChangeText,
+    placeholder,
+    style,
     secureTextEntry,
     multiline,
-    ...props 
-  }: any) => (
-    <input
-      type={secureTextEntry ? 'password' : 'text'}
-      value={value}
-      onChange={(e) => onChangeText(e.target.value)}
-      placeholder={placeholder}
-      style={style}
-      data-multiline={multiline}
-      {...props}
-    />
-  );
-  const TouchableOpacity = ({ children, onPress, style }: any) => (
-    <button onClick={onPress} style={style}>{children}</button>
-  );
-  const Button = ({ title, onPress }: any) => (
-    <button onClick={onPress}>{title}</button>
-  );
-  const InputAccessoryView = ({ children }: any) => <div>{children}</div>;
-  const Keyboard = {
-    dismiss: jest.fn(),
+    editable = true,
+    keyboardType,
+    placeholderTextColor,
+    numberOfLines,
+    inputAccessoryViewID,
+    ...props
+  }: any) => {
+    const domProps = {
+      value,
+      onChange: (e: any) => onChangeText?.(e.target.value),
+      placeholder,
+      style,
+      type: secureTextEntry ? 'password' : 'text',
+      disabled: !editable,
+      'data-testid': 'text-input',
+      'data-multiline': multiline,
+      'data-keyboard-type': keyboardType,
+      'data-placeholder-text-color': placeholderTextColor,
+      'data-number-of-lines': numberOfLines,
+      'data-input-accessory-view-id': inputAccessoryViewID,
+      ...props
+    };
+    
+    return multiline ? <textarea {...domProps} /> : <input {...domProps} />;
   };
+  
+  const TouchableOpacity = ({ children, onPress, style, ...props }: any) => (
+    <button onClick={onPress} style={style} {...props}>
+      {children}
+    </button>
+  );
+  
+  const Button = ({ title, onPress, ...props }: any) => (
+    <button onClick={onPress} {...props}>
+      {title}
+    </button>
+  );
+  
+  const Modal = ({ children, visible, ...props }: any) => (
+    visible ? <div {...props}>{children}</div> : null
+  );
+  
+  const InputAccessoryView = ({ children, ...props }: any) => (
+    <div data-input-accessory-view {...props}>
+      {children}
+    </div>
+  );
   
   return {
     View,
@@ -43,13 +79,16 @@ jest.mock('react-native', () => {
     TextInput,
     TouchableOpacity,
     Button,
+    Modal,
     InputAccessoryView,
-    Keyboard,
     StyleSheet: {
       create: (styles: any) => styles,
     },
     Platform: {
       OS: 'ios',
+    },
+    Keyboard: {
+      dismiss: jest.fn(),
     },
   };
 });
